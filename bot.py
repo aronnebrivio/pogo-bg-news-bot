@@ -28,7 +28,7 @@ allowed = []
 TOKEN = os.environ.get('BOT_TOKEN')
 PASSWORD = os.environ.get('ADMIN_PASSWORD')
 
-if TOKEN == '' | PASSWORD == '':
+if TOKEN == '' or PASSWORD == '':
     sys.exit('No TOKEN or PASSWORD in environment')
 
 with open('chats.json', 'r') as f:
