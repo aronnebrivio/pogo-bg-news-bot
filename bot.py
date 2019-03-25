@@ -20,8 +20,13 @@ def handle(msg):
         txt = txt + msg['caption']
 
     if msg['chat']['type'] in ['group', 'supergroup'] and msg['new_chat_participant']:
+        print('here we are')
         if msg['new_chat_participant']['is_bot'] and msg['new_chat_participant']['id'] == BOT_ID:
+            print('here we are 2')
             CHATS.append(msg['chat']['id'])
+            print(CHATS)
+            print(set(CHATS))
+            print(list(set(CHATS)))
             redis.set('chats', ','.join(list(set(CHATS))))
     elif msg['chat']['type'] == 'channel' and is_allowed(msg) and txt != '':
         for chat in CHATS:
