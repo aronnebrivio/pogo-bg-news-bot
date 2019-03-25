@@ -46,13 +46,13 @@ if os.path.isfile('config.json'):
             sys.exit("No destinations defined. Define it in a file called config.json.")
         SOURCE = config['source']
         DESTINATIONS = config['destinations']
-        print('SOURCE: ' + SOURCE)
-        print('DESTINATIONS: ' + DESTINATIONS)
+        print('SOURCE: ', SOURCE)
+        print('DESTINATIONS: ', DESTINATIONS)
 else:
     sys.exit("No config.json file found.")
 
 def is_allowed(msg):
-    print('IS_ALLOWED: ' + msg)
+    print('IS_ALLOWED: ', msg)
     if msg['chat']['id'] == SOURCE:
         return True
     return False #'from' in msg and msg['from']['id'] in allowed
@@ -130,7 +130,7 @@ def handle(msg):
                 for chat in DESTINATIONS:
                     approved.append(chat)
                     bot.forwardMessage(chat, chat_id, msg['message_id'])
-                    print('FORWARDED TO: ' + chat)
+                    print('FORWARDED TO: ', chat)
 
 bot = telepot.Bot(TOKEN)
 
