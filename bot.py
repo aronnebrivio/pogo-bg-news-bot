@@ -46,8 +46,7 @@ redis = redis.from_url(REDIS_URL)
 chats = redis.get('chats')
 if chats:
     CHATS = chats.split(',')
-
-if not CHATS:
+else:
     CHATS = []
 
 if TOKEN == '' or PASSWORD == '' or BOT_ID == '':
