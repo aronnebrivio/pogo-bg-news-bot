@@ -23,7 +23,7 @@ def handle(msg):
             CHATS.append(msg['chat']['id'])
             updateChatsList()
     elif msg['chat']['type'] == 'channel' and is_allowed(msg) and txt != '':
-        if CHATS
+        if CHATS:
             for chat in CHATS:
                 bot.forwardMessage(chat, SOURCE, msg['message_id'])
 
