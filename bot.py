@@ -28,7 +28,10 @@ def handle(msg):
         for chat in CHATS:
             print('DEST: ', chat, ' - SOURCE: ', SOURCE)
             if chat != '':
-                bot.forwardMessage(chat, SOURCE, msg['message_id'])
+                try:
+                    bot.forwardMessage(chat, SOURCE, msg['message_id'])
+                except:
+                    print('Error forwarding message')
 
 def is_allowed(msg):
     if msg['chat']['id'] == SOURCE:
