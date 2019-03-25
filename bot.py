@@ -20,14 +20,10 @@ def handle(msg):
         txt = txt + msg['caption']
 
     if msg['chat']['type'] in ['group', 'supergroup'] and msg['new_chat_participant']:
-        print('here we are', BOT_ID)
         if msg['new_chat_participant']['id'] == int(BOT_ID):
-            print('here we are 2')
+            print('here we are')
             CHATS.append(msg['chat']['id'])
-            print(CHATS)
-            print(set(CHATS))
-            print(list(set(CHATS)))
-            redis.set('chats', ','.join(list(set(CHATS))))
+            redis.set('chats', ','.join(map(str, list(set(CHATS)))))
     elif msg['chat']['type'] == 'channel' and is_allowed(msg) and txt != '':
         for chat in CHATS:
             print('DEST: ', chat, ' - SOURCE: ', SOURCE)
@@ -50,7 +46,7 @@ if REDIS_URL == None:
 redis = redis.from_url(REDIS_URL)
 chats = redis.get('chats')
 if chats:
-    CHATS = chats.split(',')
+    CHATS = map(int, chats.split(','))
 else:
     CHATS = []
 
