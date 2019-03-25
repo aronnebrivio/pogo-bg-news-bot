@@ -9,22 +9,42 @@ import telepot
 import time
 from telepot.loop import MessageLoop
 
-def save_status(obj):
-    with open('chats.json', 'w') as f:
-        f.write(json.dumps(obj))
+def handle(msg):
+    print('Message: ' + str(msg))
+    content_type, chat_type, chat_id = telepot.glance(msg)
+    txt = ''
+    if 'text' in msg:
+        txt = txt + msg['text']
+    elif 'caption' in msg:
+        txt = txt + msg['caption']
 
-def save_allowed(s):
-    with open('allowed.json', 'w') as f:
-        f.write(json.dumps(list(s)))
+    if msg['chat']['type'] in ['group', 'supergroup'] and len(msg['new_chat_members']) > 0:
+        newMembers = msg['new_chat_members']
+        foundLeMe = False
+        for member in newMembers:
+            if member['is_bot'] and member['id'] == BOT_ID:
+                foundLeMe = True
+        
+        if foundLeMe:
+            CHATS.append(msg['chat']['id'])
+    if msg['chat']['type'] == 'channel' and is_allowed(msg) and txt != '':
+        for chat in CHATS:
+            bot.forwardMessage(chat, chat_id, msg['message_id'])
+
+def is_allowed(msg):
+    if msg['chat']['id'] == SOURCE:
+        return True
+    return False
+
+def updateChatsList():
+    with open('chats.json', 'w') as f:
+        f.write(','.join(list(set(CHATS))))
 
 if not os.path.isfile('chats.json'):
-    save_status({})
+    f = open('chats.json', 'w+')
 
-if not os.path.isfile('allowed.json'):
-    save_allowed(set())
-
-chats = {}
-allowed = []
+CHATS = []
+BOT_ID = os.environ.get('BOT_ID')
 TOKEN = os.environ.get('BOT_TOKEN')
 PASSWORD = os.environ.get('ADMIN_PASSWORD')
 
@@ -32,105 +52,16 @@ if TOKEN == '' or PASSWORD == '':
     sys.exit('No TOKEN or PASSWORD in environment')
 
 with open('chats.json', 'r') as f:
-    chats = json.load(f)
-
-with open('allowed.json', 'r') as f:
-    allowed = set(json.load(f))
+    CHATS = f.read().split(',')
 
 if os.path.isfile('config.json'):
     with open('config.json', 'r') as f:
         config = json.load(f)
-        if config['source'] == "":
-            sys.exit("No source channel defined. Define it in a file called config.json.")
-        if config['destinations'] == "":
-            sys.exit("No destinations defined. Define it in a file called config.json.")
+        if config['source'] == '':
+            sys.exit('No source channel defined. Define it in a file called config.json.')
         SOURCE = config['source']
-        DESTINATIONS = config['destinations']
-        print('SOURCE: ', SOURCE)
-        print('DESTINATIONS: ', DESTINATIONS)
 else:
-    sys.exit("No config.json file found.")
-
-def is_allowed(msg):
-    print('IS_ALLOWED: ', msg)
-    if msg['chat']['id'] == SOURCE:
-        return True
-    return False #'from' in msg and msg['from']['id'] in allowed
-
-def handle(msg):
-    print("Message: " + str(msg))
-    # Add person as allowed
-    content_type, chat_type, chat_id = telepot.glance(msg)
-    txt = ""
-    if 'text' in msg:
-        txt = txt + msg['text']
-    elif 'caption' in msg:
-        txt = txt + msg['caption']
-    # Addme and rmme only valid on groups and personal chats.
-    if msg['chat']['type'] != 'channel':
-        if "/addme" == txt.strip()[:6]:
-            if msg['chat']['type'] != 'private':
-                bot.sendMessage(chat_id, "This command is meant to be used only on personal chats.")
-            else:
-                used_password = " ".join(txt.strip().split(" ")[1:])
-                if used_password == PASSWORD:
-                    allowed.add(msg['from']['id'])
-                    save_allowed(allowed)
-                    bot.sendMessage(chat_id, msg['from']['first_name'] + ", you have been registered " +
-                                    "as an authorized user of this bot.")
-                else:
-                    bot.sendMessage(chat_id, "Wrong password.")
-        if "/rmme" == txt.strip()[:5]:
-            allowed.remove(msg['from']['id'])
-            save_allowed(allowed)
-            bot.sendMessage(chat_id, "Your permission for using the bot was removed successfully.")
-    if is_allowed(msg):
-        if txt != "":
-            if "/add " == txt[:5]:
-                txt_split = txt.strip().split(" ")
-                if len(txt_split) == 2 and "#" == txt_split[1][0]:
-                    tag = txt_split[1].lower()
-                    name = ""
-                    if msg['chat']['type'] == "private":
-                        name = name + "Personal chat with " + msg['chat']['first_name'] + ((" " + msg['chat']['last_name']) if 'last_name' in msg['chat'] else "")
-                    else:
-                        name = msg['chat']['title']
-                    chats[tag] = {'id': chat_id, 'name': name}
-                    bot.sendMessage(chat_id, name + " added with tag " + tag)
-                    save_status(chats)
-                else:
-                    bot.sendMessage(chat_id, "Incorrect format. It should be _/add #{tag}_", parse_mode="Markdown")
-            elif "/rm " == txt[:4]:
-                txt_split = txt.strip().split(" ")
-                if len(txt_split) == 2 and "#" == txt_split[1][0]:
-                    tag = txt_split[1].lower()
-                    if tag in chats:
-                        if chats[tag]['id'] == chat_id:
-                            del chats[tag]
-                            bot.sendMessage(chat_id, "Tag "+tag+" deleted from taglist.")
-                            save_status(chats)
-                            return
-                        else:
-                            bot.sendMessage(chat_id, "You can't delete a chat's tag from a different chat.")
-                    else:
-                        bot.sendMessage(chat_id, "Tag doesn't exist on TagList")
-                else:
-                    bot.sendMessage(chat_id, "Incorrect format. It should be _/rm #{tag}_", parse_mode="Markdown")
-
-            elif "/taglist" ==  txt.strip()[:8]:
-                tags_names = []
-                for tag, chat in chats.items():
-                    tags_names.append( (tag, chat['name']))
-                response = "<b>TagList</b>"
-                for (tag, name) in sorted(tags_names):
-                    response = response + "\n<b>" + tag + "</b>: <i>" + name + "</i>"
-                bot.sendMessage(chat_id, response, parse_mode="HTML")
-            else:
-                approved = []
-                for chat in DESTINATIONS:
-                    approved.append(chat)
-                    bot.forwardMessage(chat, chat_id, msg['message_id'])
-                    print('FORWARDED TO: ', chat)
+    sys.exit('No config.json file found.')
 
 bot = telepot.Bot(TOKEN)
 
