@@ -23,8 +23,9 @@ def handle(msg):
             CHATS.append(msg['chat']['id'])
             updateChatsList()
     elif msg['chat']['type'] == 'channel' and is_allowed(msg) and txt != '':
-        for chat in CHATS:
-            bot.forwardMessage(chat, SOURCE, msg['message_id'])
+        if CHATS
+            for chat in CHATS:
+                bot.forwardMessage(chat, SOURCE, msg['message_id'])
 
 def is_allowed(msg):
     if msg['chat']['id'] == SOURCE:
@@ -32,11 +33,9 @@ def is_allowed(msg):
     return False
 
 def updateChatsList():
-    with open('chats.json', 'w') as f:
+    with open('chats.json', 'w+') as f:
         f.write(','.join(list(set(CHATS))))
-
-if not os.path.isfile('chats.json'):
-    f = open('chats.json', 'w+')
+        f.close()
 
 CHATS = []
 BOT_ID = os.environ.get('BOT_ID')
@@ -46,8 +45,9 @@ PASSWORD = os.environ.get('ADMIN_PASSWORD')
 if TOKEN == '' or PASSWORD == '' or BOT_ID == '':
     sys.exit('No TOKEN, PASSWORD or BOT_ID in environment')
 
-with open('chats.json', 'r') as f:
+with open('chats.json', 'r+') as f:
     CHATS = f.read().split(',')
+    f.close()
 
 if os.path.isfile('config.json'):
     with open('config.json', 'r') as f:
@@ -55,6 +55,7 @@ if os.path.isfile('config.json'):
         if config['source'] == '':
             sys.exit('No source channel defined. Define it in a file called config.json.')
         SOURCE = config['source']
+        f.close()
 else:
     sys.exit('No config.json file found.')
 
