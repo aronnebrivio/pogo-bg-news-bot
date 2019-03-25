@@ -25,8 +25,11 @@ if not os.path.isfile('allowed.json'):
 
 chats = {}
 allowed = []
-TOKEN = ""
-PASSWORD = "changeme"
+TOKEN = os.environ.get('BOT_TOKEN')
+PASSWORD = os.environ.get('ADMIN_PASSWORD')
+
+if TOKEN == '' | PASSWORD == '':
+    sys.exit('No TOKEN or PASSWORD in environment')
 
 with open('chats.json', 'r') as f:
     chats = json.load(f)
@@ -37,21 +40,22 @@ with open('allowed.json', 'r') as f:
 if os.path.isfile('config.json'):
     with open('config.json', 'r') as f:
         config = json.load(f)
-        if config['token'] == "":
-            sys.exit("No token defined. Define it in a file called config.json.")
-        if config['password'] == "":
-            print("WARNING: Empty Password for registering to use the bot." +
-                  " It could be dangerous, because anybody could use this bot" +
-                  " and forward messages to the channels associated to it")
-        TOKEN = config['token']
-        PASSWORD = config['password']
+        if config['source'] == "":
+            sys.exit("No source channel defined. Define it in a file called config.json.")
+        if config['destinations'] == "":
+            sys.exit("No destinations defined. Define it in a file called config.json.")
+        SOURCE = config['source']
+        DESTINATIONS = config['destinations']
+        print('SOURCE: ' + SOURCE)
+        print('DESTINATIONS: ' + DESTINATIONS)
 else:
-    sys.exit("No config file found. Remember changing the name of config-sample.json to config.json")
+    sys.exit("No config.json file found.")
 
 def is_allowed(msg):
-    if msg['chat']['type'] == 'channel':
-        return True #all channel admins are allowed to use the bot (channels don't have sender info)
-    return 'from' in msg and msg['from']['id'] in allowed
+    print('IS_ALLOWED: ' + msg)
+    if msg['chat']['id'] == SOURCE:
+        return True
+    return False #'from' in msg and msg['from']['id'] in allowed
 
 def handle(msg):
     print("Message: " + str(msg))
@@ -121,29 +125,12 @@ def handle(msg):
                 for (tag, name) in sorted(tags_names):
                     response = response + "\n<b>" + tag + "</b>: <i>" + name + "</i>"
                 bot.sendMessage(chat_id, response, parse_mode="HTML")
-            elif "#" == txt[0]:
-                txt_split =txt.strip().split(" ")
-                i = 0
-                tags = []
-                while i < len(txt_split) and txt_split[i][0] == "#":
-                    tags.append(txt_split[i].lower())
-                    i+=1
-                if i != len(txt_split) or 'reply_to_message' in msg:
-                    approved = []
-                    rejected = []
-                    for tag in tags:
-                        if tag in chats:
-                            if chats[tag]['id'] != chat_id:
-                                approved.append(chats[tag]['name'])
-                                bot.forwardMessage(chats[tag]['id'], chat_id, msg['message_id'])
-                                if 'reply_to_message' in msg:
-                                    bot.forwardMessage(chats[tag]['id'], chat_id, msg['reply_to_message']['message_id'])
-                        else:
-                            rejected.append(tag)
-                    if len(rejected) > 0:
-                        bot.sendMessage(chat_id, "Failed to send messages to tags <i>" + ", ".join(rejected) + "</i>", parse_mode="HTML")
-                else:
-                    bot.sendMessage(chat_id, "Failed to send a message only with tags which is not a reply to another message")
+            else:
+                approved = []
+                for chat in DESTINATIONS:
+                    approved.append(chat)
+                    bot.forwardMessage(chat, chat_id, msg['message_id'])
+                    print('FORWARDED TO: ' + chat)
 
 bot = telepot.Bot(TOKEN)
 
