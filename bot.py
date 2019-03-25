@@ -7,6 +7,7 @@ import os
 import sys
 import telepot
 import time
+import redis
 from telepot.loop import MessageLoop
 
 def handle(msg):
@@ -21,7 +22,7 @@ def handle(msg):
     if msg['chat']['type'] in ['group', 'supergroup'] and msg['new_chat_participant']:
         if msg['new_chat_participant']['is_bot'] and msg['new_chat_participant']['id'] == BOT_ID:
             CHATS.append(msg['chat']['id'])
-            updateChatsList()
+            redis.set('chats', list(set(CHATS)))
     elif msg['chat']['type'] == 'channel' and is_allowed(msg) and txt != '':
         for chat in CHATS:
             print('DEST: ', chat, ' - SOURCE: ', SOURCE)
@@ -33,27 +34,22 @@ def is_allowed(msg):
         return True
     return False
 
-def updateChatsList():
-    with open('chats.json', 'w+') as f:
-        f.write(json.dumps(list(set(CHATS))))
-        f.close()
-
-CHATS = []
 BOT_ID = os.environ.get('BOT_ID')
 TOKEN = os.environ.get('BOT_TOKEN')
 PASSWORD = os.environ.get('ADMIN_PASSWORD')
+REDIS_URL = os.environ.get('REDIS_URL')
+
+if REDIS_URL == None:
+  redis_url = '127.0.0.1:6379'
+  
+redis = redis.from_url(REDIS_URL)
+CHATS = redis.get('chats')
+
+if not CHATS:
+    CHATS = []
 
 if TOKEN == '' or PASSWORD == '' or BOT_ID == '':
     sys.exit('No TOKEN, PASSWORD or BOT_ID in environment')
-
-if not os.path.isfile('chats.json'):
-    with open('chats.json', 'w+') as f:
-        f.close()
-
-with open('chats.json', 'r') as f:
-    print(f.read())
-    CHATS = json.loads(f.read())
-    f.close()
 
 if os.path.isfile('config.json'):
     with open('config.json', 'r') as f:
