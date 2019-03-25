@@ -35,7 +35,7 @@ def is_allowed(msg):
 
 def updateChatsList():
     with open('chats.json', 'w+') as f:
-        f.write(','.join(list(set(CHATS))))
+        f.write(json.dumps(list(set(CHATS))))
         f.close()
 
 CHATS = []
@@ -52,7 +52,7 @@ if not os.path.isfile('chats.json'):
 
 with open('chats.json', 'r') as f:
     print(f.read())
-    CHATS = f.read().split(',')
+    CHATS = json.loads(f.read())
     f.close()
 
 if os.path.isfile('config.json'):
