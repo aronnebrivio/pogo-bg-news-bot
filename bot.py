@@ -43,7 +43,9 @@ if REDIS_URL == None:
   redis_url = '127.0.0.1:6379'
   
 redis = redis.from_url(REDIS_URL)
-CHATS = redis.get('chats').split(',')
+chats = redis.get('chats')
+if chats:
+    CHATS = chats.split(',')
 
 if not CHATS:
     CHATS = []
