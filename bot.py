@@ -20,7 +20,7 @@ def handle(msg):
         txt = txt + msg['caption']
 
     if msg['chat']['type'] in ['group', 'supergroup'] and msg['new_chat_participant']:
-        print('here we are')
+        print('here we are', BOT_ID)
         if msg['new_chat_participant']['id'] == BOT_ID:
             print('here we are 2')
             CHATS.append(msg['chat']['id'])
