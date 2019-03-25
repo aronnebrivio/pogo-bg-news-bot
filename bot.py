@@ -45,9 +45,9 @@ PASSWORD = os.environ.get('ADMIN_PASSWORD')
 if TOKEN == '' or PASSWORD == '' or BOT_ID == '':
     sys.exit('No TOKEN, PASSWORD or BOT_ID in environment')
 
-if not os.path.isfile('config.json'):
-    f = open('chats.json', 'w+')
-    f.close()
+if not os.path.isfile('chats.json'):
+    with open('chats.json', 'w+') as f:
+        f.close()
 
 with open('chats.json', 'r') as f:
     CHATS = f.read().split(',')
