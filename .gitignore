@@ -103,7 +103,6 @@ ENV/
 # token, allowed and groups are ignored
 allowed.json
 chats.json
-config.json
 
 #idea is ignored too
 
