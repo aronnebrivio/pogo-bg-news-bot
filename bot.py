@@ -18,16 +18,11 @@ def handle(msg):
     elif 'caption' in msg:
         txt = txt + msg['caption']
 
-    if msg['chat']['type'] in ['group', 'supergroup'] and msg['new_chat_members'] and len(msg['new_chat_members']) > 0:
-        newMembers = msg['new_chat_members']
-        foundLeMe = False
-        for member in newMembers:
-            if member['is_bot'] and member['id'] == BOT_ID:
-                foundLeMe = True
-        
-        if foundLeMe:
+    if msg['chat']['type'] in ['group', 'supergroup'] and msg['new_chat_participant']:
+        if msg['new_chat_participant']['is_bot'] and msg['new_chat_participant']['id'] == BOT_ID:
             CHATS.append(msg['chat']['id'])
-    if msg['chat']['type'] == 'channel' and is_allowed(msg) and txt != '':
+            updateChatsList()
+    elif msg['chat']['type'] == 'channel' and is_allowed(msg) and txt != '':
         for chat in CHATS:
             bot.forwardMessage(chat, SOURCE, msg['message_id'])
 
