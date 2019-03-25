@@ -25,6 +25,7 @@ def handle(msg):
     elif msg['chat']['type'] == 'channel' and is_allowed(msg) and txt != '':
         if CHATS:
             for chat in CHATS:
+                print('DEST: ', chat, ' - SOURCE: ', SOURCE)
                 bot.forwardMessage(chat, SOURCE, msg['message_id'])
 
 def is_allowed(msg):
