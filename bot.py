@@ -49,7 +49,7 @@ if REDIS_URL == None:
 redis = redis.from_url(REDIS_URL)
 chats = redis.get('chats')
 if chats:
-    CHATS = map(int, chats.split(','))
+    CHATS = map(int, str(chats).split(','))
 else:
     CHATS = []
 
