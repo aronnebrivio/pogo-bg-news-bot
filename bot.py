@@ -51,6 +51,7 @@ if not os.path.isfile('chats.json'):
         f.close()
 
 with open('chats.json', 'r') as f:
+    print(f.read())
     CHATS = f.read().split(',')
     f.close()
 
