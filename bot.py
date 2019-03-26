@@ -10,6 +10,12 @@ import time
 import redis
 from telepot.loop import MessageLoop
 
+BOT_ID = os.environ.get('BOT_ID')
+TOKEN = os.environ.get('BOT_TOKEN')
+PASSWORD = os.environ.get('ADMIN_PASSWORD')
+SOURCE = os.environ.get('SOURCE')
+REDIS_URL = os.environ.get('REDIS_URL')
+
 def handle(msg):
     print('Message: ' + str(msg))
     txt = ''
@@ -20,28 +26,20 @@ def handle(msg):
 
     if msg['chat']['type'] in ['group', 'supergroup'] and msg['new_chat_participant']:
         if str(msg['new_chat_participant']['id']) == BOT_ID:
-            print('here we are')
             CHATS.append(msg['chat']['id'])
-            redis.set('chats', ','.join(map(str, list(set(CHATS)))))
+            redis.set('chats', ','.join(list(set(CHATS))))
     elif msg['chat']['type'] == 'channel' and is_allowed(msg) and txt != '':
-        print('CHATS: ', CHATS)
         for chat in CHATS:
-            print('DEST: ', chat, ' - SOURCE: ', SOURCE)
             if chat:
                 try:
                     bot.forwardMessage(chat, SOURCE, msg['message_id'])
                 except:
-                    print('Error forwarding message')
+                    print('Error forwarding message to ', chat)
 
 def is_allowed(msg):
     if str(msg['chat']['id']) == SOURCE:
         return True
     return False
-
-BOT_ID = os.environ.get('BOT_ID')
-TOKEN = os.environ.get('BOT_TOKEN')
-PASSWORD = os.environ.get('ADMIN_PASSWORD')
-REDIS_URL = os.environ.get('REDIS_URL')
 
 if REDIS_URL != None:
     redis = redis.from_url(REDIS_URL)
@@ -54,18 +52,8 @@ if chats:
 else:
     CHATS = []
 
-if TOKEN == '' or PASSWORD == '' or BOT_ID == '':
-    sys.exit('No TOKEN, PASSWORD or BOT_ID in environment')
-
-if os.path.isfile('config.json'):
-    with open('config.json', 'r') as f:
-        config = json.load(f)
-        if config['source'] == '':
-            sys.exit('No source channel defined. Define it in a file called config.json.')
-        SOURCE = config['source']
-        f.close()
-else:
-    sys.exit('No config.json file found.')
+if TOKEN == '' or PASSWORD == '' or BOT_ID == '' or SOURCE == '':
+    sys.exit('No TOKEN, PASSWORD, SOURCE or BOT_ID in environment')
 
 bot = telepot.Bot(TOKEN)
 
