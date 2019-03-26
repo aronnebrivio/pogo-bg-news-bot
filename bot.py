@@ -46,7 +46,7 @@ if REDIS_URL != None:
 else:
     redis = redis.StrictRedis(host='localhost', port=6379, password='', decode_responses=True)
 
-chats = redis.get('chats')
+chats = redis.get('chats').decode('utf-8')
 print('CHATS: ', chats)
 if chats:
     CHATS = str(chats).split(',')
