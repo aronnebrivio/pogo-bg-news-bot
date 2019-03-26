@@ -25,10 +25,10 @@ def handle(msg):
             CHATS.append(msg['chat']['id'])
             redis.set('chats', ','.join(map(str, list(set(CHATS)))))
     elif msg['chat']['type'] == 'channel' and is_allowed(msg) and txt != '':
-        print(CHATS)
+        print('CHATS: ', CHATS)
         for chat in CHATS:
             print('DEST: ', chat, ' - SOURCE: ', SOURCE)
-            if chat != '':
+            if chat:
                 try:
                     bot.forwardMessage(chat, SOURCE, msg['message_id'])
                 except:
