@@ -20,7 +20,7 @@ def handle(msg):
         txt = txt + msg['caption']
 
     if msg['chat']['type'] in ['group', 'supergroup'] and msg['new_chat_participant']:
-        if msg['new_chat_participant']['id'] == int(float(BOT_ID)):
+        if str(msg['new_chat_participant']['id']) == BOT_ID:
             print('here we are')
             CHATS.append(msg['chat']['id'])
             redis.set('chats', ','.join(map(str, list(set(CHATS)))))
@@ -51,7 +51,7 @@ else:
 
 chats = redis.get('chats')
 if chats:
-    CHATS = map(int, map(float, str(chats).split(',')))
+    CHATS = str(chats).split(',')
 else:
     CHATS = []
 
