@@ -43,10 +43,11 @@ TOKEN = os.environ.get('BOT_TOKEN')
 PASSWORD = os.environ.get('ADMIN_PASSWORD')
 REDIS_URL = os.environ.get('REDIS_URL')
 
-if REDIS_URL == None:
-  redis_url = '127.0.0.1:6379'
-  
-redis = redis.from_url(REDIS_URL)
+if REDIS_URL != None:
+    redis = redis.from_url(REDIS_URL)
+else:
+    redis = redis.StrictRedis(host='localhost', port=6379, password='', decode_responses=True)
+
 chats = redis.get('chats')
 if chats:
     CHATS = map(int, str(chats).split(','))
