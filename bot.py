@@ -47,10 +47,12 @@ else:
     redis = redis.StrictRedis(host='localhost', port=6379, password='', decode_responses=True)
 
 chats = redis.get('chats')
+print('CHATS: ', chats)
 if chats:
     CHATS = str(chats).split(',')
 else:
     CHATS = []
+print(json.dumps(CHATS))
 
 if TOKEN == '' or PASSWORD == '' or BOT_ID == '' or SOURCE == '':
     sys.exit('No TOKEN, PASSWORD, SOURCE or BOT_ID in environment')
