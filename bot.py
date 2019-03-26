@@ -12,7 +12,6 @@ from telepot.loop import MessageLoop
 
 def handle(msg):
     print('Message: ' + str(msg))
-    content_type, chat_type, chat_id = telepot.glance(msg)
     txt = ''
     if 'text' in msg:
         txt = txt + msg['text']
@@ -35,7 +34,7 @@ def handle(msg):
                     print('Error forwarding message')
 
 def is_allowed(msg):
-    if msg['chat']['id'] == SOURCE:
+    if str(msg['chat']['id']) == SOURCE:
         return True
     return False
 
