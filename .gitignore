@@ -107,3 +107,4 @@ chats.json
 #idea is ignored too
 
 .idea/
+.vscode/

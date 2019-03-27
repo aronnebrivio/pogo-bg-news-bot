@@ -10,12 +10,31 @@ import time
 import redis
 from telepot.loop import MessageLoop
 
+# Load env variables
 BOT_ID = os.environ.get('BOT_ID')
 TOKEN = os.environ.get('BOT_TOKEN')
 PASSWORD = os.environ.get('ADMIN_PASSWORD')
 SOURCE = os.environ.get('SOURCE')
+SPAM_CHAT_ID = os.environ.get('SPAM_CHAT_ID')
 REDIS_URL = os.environ.get('REDIS_URL')
 
+# Load data from Redis
+if REDIS_URL != None:
+    redis = redis.from_url(REDIS_URL)
+else:
+    redis = redis.Redis(host='localhost', port=6379, password='', decode_responses=True)
+
+chats = redis.get('chats').decode('utf-8')
+
+if chats:
+    CHATS = str(chats).split(',')
+else:
+    CHATS = []
+
+if TOKEN == '' or PASSWORD == '' or BOT_ID == '' or SOURCE == '':
+    sys.exit('No TOKEN, PASSWORD, SOURCE or BOT_ID in environment')
+
+# Functions
 def handle(msg):
     print('Message: ' + str(msg))
     txt = ''
@@ -28,35 +47,29 @@ def handle(msg):
         if str(msg['new_chat_participant']['id']) == BOT_ID:
             CHATS.append(str(msg['chat']['id']))
             redis.set('chats', ','.join(list(set(CHATS))))
-    elif msg['chat']['type'] == 'channel' and is_allowed(msg) and txt != '':
-        for chat in CHATS:
-            if chat:
+    elif msg['chat']['type'] == 'channel' and isAllowed(msg) and txt != '':
+        for chatId in CHATS:
+            if shouldForward(chatId, txt):
                 try:
-                    bot.forwardMessage(chat, SOURCE, msg['message_id'])
+                    bot.forwardMessage(chatId, SOURCE, msg['message_id'])
                 except:
-                    print('Error forwarding message to ', chat)
+                    print('Error forwarding message to ', chatId)
 
-def is_allowed(msg):
+def isAllowed(msg):
     if str(msg['chat']['id']) == SOURCE:
         return True
     return False
 
-if REDIS_URL != None:
-    redis = redis.from_url(REDIS_URL)
-else:
-    redis = redis.StrictRedis(host='localhost', port=6379, password='', decode_responses=True)
+def shouldForward(chatId, text):
+    if chatId == SPAM_CHAT_ID:
+        return True
 
-chats = redis.get('chats').decode('utf-8')
-print('CHATS: ', chats)
-if chats:
-    CHATS = str(chats).split(',')
-else:
-    CHATS = []
-print(json.dumps(CHATS))
+    for tag in CHATS[chatId]:
+        if text.find(tag):
+            return True
+    return False
 
-if TOKEN == '' or PASSWORD == '' or BOT_ID == '' or SOURCE == '':
-    sys.exit('No TOKEN, PASSWORD, SOURCE or BOT_ID in environment')
-
+# Main
 bot = telepot.Bot(TOKEN)
 
 MessageLoop(bot, handle).run_as_thread()
