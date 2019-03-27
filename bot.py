@@ -10,30 +10,6 @@ import time
 import redis
 from telepot.loop import MessageLoop
 
-# Load env variables
-BOT_ID = os.environ.get('BOT_ID')
-TOKEN = os.environ.get('BOT_TOKEN')
-PASSWORD = os.environ.get('ADMIN_PASSWORD')
-SOURCE = os.environ.get('SOURCE')
-SPAM_CHAT_ID = os.environ.get('SPAM_CHAT_ID')
-REDIS_URL = os.environ.get('REDIS_URL')
-
-# Load data from Redis
-if REDIS_URL != None:
-    redis = redis.from_url(REDIS_URL)
-else:
-    redis = redis.Redis(host='localhost', port=6379, password='', decode_responses=True)
-
-chats = redis.get('chats').decode('utf-8')
-
-if chats:
-    CHATS = json.loads(chats)
-else:
-    CHATS = json.loads('{}')
-
-if TOKEN == '' or PASSWORD == '' or BOT_ID == '' or SOURCE == '':
-    sys.exit('No TOKEN, PASSWORD, SOURCE or BOT_ID in environment')
-
 # Functions
 def handle(msg):
     print('Message: ' + str(msg))
@@ -70,10 +46,35 @@ def shouldForward(chatId, text):
             return True
     return False
 
-# Main
+# MAIN
+# Load env variables
+BOT_ID = os.environ.get('BOT_ID')
+TOKEN = os.environ.get('BOT_TOKEN')
+PASSWORD = os.environ.get('ADMIN_PASSWORD')
+SOURCE = os.environ.get('SOURCE')
+SPAM_CHAT_ID = os.environ.get('SPAM_CHAT_ID')
+REDIS_URL = os.environ.get('REDIS_URL')
+
+if TOKEN == '' or PASSWORD == '' or BOT_ID == '' or SOURCE == '':
+    sys.exit('No TOKEN, PASSWORD, SOURCE or BOT_ID in environment')
+
+# Load data from Redis
+if REDIS_URL != None:
+    redis = redis.from_url(REDIS_URL)
+else:
+    redis = redis.Redis(host='localhost', port=6379, password='', decode_responses=True)
+
+chats = redis.get('chats').decode('utf-8')
+
+if chats:
+    CHATS = json.loads(chats)
+else:
+    CHATS = json.loads('{}')
+
 bot = telepot.Bot(TOKEN)
 
 MessageLoop(bot, handle).run_as_thread()
+print(CHATS)
 print('Listening ...')
 # Keep the program running.
 while 1:
