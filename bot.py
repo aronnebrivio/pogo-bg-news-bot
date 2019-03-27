@@ -65,7 +65,7 @@ def shouldForward(chatId, text):
         return True
 
     for tag in CHATS[chatId]:
-        if text.find(tag):
+        if text.find('#' + tag) >= 0:
             return True
     return False
 
