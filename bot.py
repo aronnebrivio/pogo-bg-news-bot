@@ -27,9 +27,9 @@ else:
 chats = redis.get('chats').decode('utf-8')
 
 if chats:
-    CHATS = str(chats).split(',')
+    CHATS = json.loads(chats)
 else:
-    CHATS = []
+    CHATS = json.loads('{}')
 
 if TOKEN == '' or PASSWORD == '' or BOT_ID == '' or SOURCE == '':
     sys.exit('No TOKEN, PASSWORD, SOURCE or BOT_ID in environment')
@@ -45,8 +45,9 @@ def handle(msg):
 
     if msg['chat']['type'] in ['group', 'supergroup'] and msg['new_chat_participant']:
         if str(msg['new_chat_participant']['id']) == BOT_ID:
-            CHATS.append(str(msg['chat']['id']))
-            redis.set('chats', ','.join(list(set(CHATS))))
+            if not CHATS[str(msg['chat']['id'])]:
+                CHATS[str(msg['chat']['id'])] = {'tags': []}
+                redis.set('chats', json.dumps(CHATS))
     elif msg['chat']['type'] == 'channel' and isAllowed(msg) and txt != '':
         for chatId in CHATS:
             if shouldForward(chatId, txt):
