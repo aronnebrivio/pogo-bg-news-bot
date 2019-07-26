@@ -40,29 +40,36 @@ class Tag(db.Entity):
 def handle(msg):
     print('Message: ' + str(msg))
     txt = ''
-    if 'text' in msg:
-        txt = txt + msg['text']
-    elif 'caption' in msg:
-        txt = txt + msg['caption']
 
-    if msg['chat']['type'] in ['group', 'supergroup'] and msg['new_chat_participant']:
-        if str(msg['new_chat_participant']['id']) == BOT_ID:
-            chatId = msg['chat']['id']
-            chat = Chat.get(telegram_id = chatId)
-            if chat == None:
-                chat = Chat(telegram_id = chatId, name = msg['chat']['title'], topics = availableTopics)
-    elif msg['chat']['type'] == 'channel' and isAllowed(msg) and txt != '':
-        chats = Chat.select()
-        for chat in chats:
-            if shouldForward(chat, txt):
-                try:
-                    bot.forwardMessage(chatId, SOURCE, msg['message_id'])
-                except:
-                    print('Error forwarding message to ', chatId)
+    try:
+        if 'text' in msg:
+            txt = txt + msg['text']
+        elif 'caption' in msg:
+            txt = txt + msg['caption']
+
+        if msg['chat']['type'] in ['group', 'supergroup'] and msg['new_chat_participant']:
+            if str(msg['new_chat_participant']['id']) == BOT_ID:
+                chatId = msg['chat']['id']
+                chat = Chat.get(telegram_id = chatId)
+                if chat == None:
+                    chat = Chat(telegram_id = chatId, name = msg['chat']['title'], topics = availableTopics)
+        elif msg['chat']['type'] == 'channel' and isAllowed(msg) and txt != '':
+            chats = Chat.select()
+            for chat in chats:
+                if shouldForward(chat, txt):
+                    try:
+                        bot.forwardMessage(chatId, SOURCE, msg['message_id'])
+                    except:
+                        print('Error forwarding message to ', chatId)
+    except KeyError:
+        print('Whoops! KeyError')
 
 def isAllowed(msg):
-    if str(msg['chat']['id']) == SOURCE:
-        return True
+    try:
+        if str(msg['chat']['id']) == SOURCE:
+            return True
+    except KeyError:
+        print('Whoops! KeyError')
     return False
 
 def shouldForward(chat, text):
