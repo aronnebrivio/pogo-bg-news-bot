@@ -6,7 +6,6 @@ import os
 import sys
 import telepot
 import time
-import redis
 from pony import orm
 from telepot.loop import MessageLoop
 from dotenv import load_dotenv
