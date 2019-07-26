@@ -112,7 +112,6 @@ if TOKEN == '' or PASSWORD == '' or BOT_ID == '' or SOURCE == '':
     sys.exit('No TOKEN, PASSWORD, SOURCE or BOT_ID in environment')
 bot = telepot.Bot(TOKEN)
 MessageLoop(bot, handle).run_as_thread()
-print(CHATS)
 print('Listening ...')
 
 # Keep the program running.
