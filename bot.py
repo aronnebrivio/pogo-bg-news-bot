@@ -7,36 +7,36 @@ import sys
 import telepot
 import time
 import redis
-from pony.orm import *
+from pony import orm
 from telepot.loop import MessageLoop
 from dotenv import load_dotenv
 
 # Classes
-db = Database()
+db = orm.Database()
 
 class Chat(db.Entity):
     _table_ = 'chats'
-    id = PrimaryKey(int, auto=True)
-    telegram_id = Required(str, unique=True)
-    main = Required(int)
-    name = Optional(str)
-    topics = Set(lambda: Topic, table='topics_for_chats', column='topic_id')
+    id = orm.PrimaryKey(int, auto=True)
+    telegram_id = orm.Required(str, unique=True)
+    main = orm.Required(int)
+    name = orm.Optional(str)
+    topics = orm.Set(lambda: Topic, table='topics_for_chats', column='topic_id')
 
 class Topic(db.Entity):
     _table_ = 'topics'
-    id = PrimaryKey(int, auto=True)
-    name = Required(str)
-    tags = Set(lambda: Tag, table='tags_for_topics', column='tag_id')
-    chats = Set(lambda: Chat, table='topics_for_chats', column='chat_id')
+    id = orm.PrimaryKey(int, auto=True)
+    name = orm.Required(str)
+    tags = orm.Set(lambda: Tag, table='tags_for_topics', column='tag_id')
+    chats = orm.Set(lambda: Chat, table='topics_for_chats', column='chat_id')
 
 class Tag(db.Entity):
     _table_ = 'tags'
-    id = PrimaryKey(int, auto=True)
-    name = Required(str, unique=True)
-    topics = Set(lambda: Topic, table='tags_for_topics', column='topic_id')
+    id = orm.PrimaryKey(int, auto=True)
+    name = orm.Required(str, unique=True)
+    topics = orm.Set(lambda: Topic, table='tags_for_topics', column='topic_id')
 
 # Functions
-@db_session
+@orm.db_session
 def handle(msg):
     print('Message: ' + str(msg))
     txt = ''
@@ -78,7 +78,7 @@ def shouldForward(chat, text):
             return True
     return False
 
-@db_session
+@orm.db_session
 def loadTopics():
     return Topic.select()
 
@@ -94,18 +94,22 @@ DB_USER = os.getenv('DB_USER')
 DB_PASSWORD = os.getenv('DB_PASSWORD')
 DB_DATABASE = os.getenv('DB_DATABASE')
 
-if TOKEN == '' or PASSWORD == '' or BOT_ID == '' or SOURCE == '':
-    sys.exit('No TOKEN, PASSWORD, SOURCE or BOT_ID in environment')
-
 # Connect to database
+if DB_HOST == '' or DB_USER == '' or DB_PASSWORD == '' or DB_DATABASE == '':
+    sys.exit('No DB_HOST, DB_USER, DB_PASSWORD or DB_DATABASE in environment')
 db.bind(provider='mysql', host=DB_HOST, user=DB_USER, passwd=DB_PASSWORD, db=DB_DATABASE)
 db.generate_mapping()
 
-bot = telepot.Bot(TOKEN)
+# Load available topics
 availableTopics = loadTopics()
 
+# Start the bot
+if TOKEN == '' or PASSWORD == '' or BOT_ID == '' or SOURCE == '':
+    sys.exit('No TOKEN, PASSWORD, SOURCE or BOT_ID in environment')
+bot = telepot.Bot(TOKEN)
 MessageLoop(bot, handle).run_as_thread()
 print('Listening ...')
+
 # Keep the program running.
 while 1:
     time.sleep(10)
