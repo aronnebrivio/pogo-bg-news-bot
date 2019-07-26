@@ -1,16 +1,43 @@
-#!/usr/bin/env python
+#!/usr/bin/env python3
 # -*- coding: utf-8 -*-
 
 import json
 import os
-
 import sys
 import telepot
 import time
 import redis
+from pony import orm
 from telepot.loop import MessageLoop
+from dotenv import load_dotenv
+
+# Classes
+db = orm.Database()
+
+class Chat(db.Entity):
+    _table_ = 'chats'
+    id = orm.PrimaryKey(int, auto=True)
+    telegram_id = orm.Required(str, unique=True)
+    main = orm.Required(int)
+    active = orm.Required(int)
+    name = orm.Optional(str)
+    topics = orm.Set(lambda: Topic, table='topics_for_chats', column='topic_id')
+
+class Topic(db.Entity):
+    _table_ = 'topics'
+    id = orm.PrimaryKey(int, auto=True)
+    name = orm.Required(str)
+    tags = orm.Set(lambda: Tag, table='tags_for_topics', column='tag_id')
+    chats = orm.Set(lambda: Chat, table='topics_for_chats', column='chat_id')
+
+class Tag(db.Entity):
+    _table_ = 'tags'
+    id = orm.PrimaryKey(int, auto=True)
+    name = orm.Required(str, unique=True)
+    topics = orm.Set(lambda: Topic, table='tags_for_topics', column='topic_id')
 
 # Functions
+@orm.db_session
 def handle(msg):
     print('Message: ' + str(msg))
     txt = ''
@@ -21,12 +48,14 @@ def handle(msg):
 
     if msg['chat']['type'] in ['group', 'supergroup'] and msg['new_chat_participant']:
         if str(msg['new_chat_participant']['id']) == BOT_ID:
-            if not CHATS[str(msg['chat']['id'])]:
-                CHATS[str(msg['chat']['id'])] = []
-                redis.set('chats', json.dumps(CHATS))
+            chatId = msg['chat']['id']
+            chat = Chat.get(telegram_id = chatId)
+            if chat == None:
+                chat = Chat(telegram_id = chatId, name = msg['chat']['title'], topics = availableTopics)
     elif msg['chat']['type'] == 'channel' and isAllowed(msg) and txt != '':
-        for chatId in CHATS:
-            if shouldForward(chatId, txt):
+        chats = Chat.select()
+        for chat in chats:
+            if shouldForward(chat, txt):
                 try:
                     bot.forwardMessage(chatId, SOURCE, msg['message_id'])
                 except:
@@ -37,45 +66,55 @@ def isAllowed(msg):
         return True
     return False
 
-def shouldForward(chatId, text):
-    if chatId == SPAM_CHAT_ID:
+def shouldForward(chat, text):
+    if chat.active == 0:
+        return False
+        
+    if chat.main > 0:
         return True
 
-    for tag in CHATS[chatId]:
-        if text.find('#' + tag) >= 0:
+    interestedTags = []
+    for topic in chat.topics:
+        interestedTags.extend(topic.tags)
+    
+    for tag in interestedTags:
+        if text.find('#' + tag.name) >= 0:
             return True
     return False
 
+@orm.db_session
+def loadTopics():
+    return Topic.select()
+
 # MAIN
 # Load env variables
-BOT_ID = os.environ.get('BOT_ID')
-TOKEN = os.environ.get('BOT_TOKEN')
-PASSWORD = os.environ.get('ADMIN_PASSWORD')
-SOURCE = os.environ.get('SOURCE')
-SPAM_CHAT_ID = os.environ.get('SPAM_CHAT_ID')
-REDIS_URL = os.environ.get('REDIS_URL')
+load_dotenv()
+BOT_ID = os.getenv('BOT_ID')
+TOKEN = os.getenv('BOT_TOKEN')
+PASSWORD = os.getenv('ADMIN_PASSWORD')
+SOURCE = os.getenv('SOURCE')
+DB_HOST = os.getenv('DB_HOST')
+DB_USER = os.getenv('DB_USER')
+DB_PASSWORD = os.getenv('DB_PASSWORD')
+DB_DATABASE = os.getenv('DB_DATABASE')
 
+# Connect to database
+if DB_HOST == '' or DB_USER == '' or DB_PASSWORD == '' or DB_DATABASE == '':
+    sys.exit('No DB_HOST, DB_USER, DB_PASSWORD or DB_DATABASE in environment')
+db.bind(provider='mysql', host=DB_HOST, user=DB_USER, passwd=DB_PASSWORD, db=DB_DATABASE)
+db.generate_mapping()
+
+# Load available topics
+availableTopics = loadTopics()
+
+# Start the bot
 if TOKEN == '' or PASSWORD == '' or BOT_ID == '' or SOURCE == '':
     sys.exit('No TOKEN, PASSWORD, SOURCE or BOT_ID in environment')
-
-# Load data from Redis
-if REDIS_URL != None:
-    redis = redis.from_url(REDIS_URL)
-else:
-    redis = redis.Redis(host='localhost', port=6379, password='', decode_responses=True)
-
-chats = redis.get('chats').decode('utf-8')
-
-if chats:
-    CHATS = json.loads(chats)
-else:
-    CHATS = json.loads('{}')
-
 bot = telepot.Bot(TOKEN)
-
 MessageLoop(bot, handle).run_as_thread()
 print(CHATS)
 print('Listening ...')
+
 # Keep the program running.
 while 1:
     time.sleep(10)
