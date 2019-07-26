@@ -54,13 +54,13 @@ def handle(msg):
                 if chat == None:
                     chat = Chat(telegram_id = chatId, name = msg['chat']['title'], main = 0, active = 1, topics = availableTopics)
         elif msg['chat']['type'] == 'channel' and isAllowed(msg) and txt != '':
-            chats = Chat.select()
+            chats = Chat.select()[:]
             for chat in chats:
                 if shouldForward(chat, txt):
                     try:
-                        bot.forwardMessage(chatId, SOURCE, msg['message_id'])
+                        bot.forwardMessage(chat.telegram_id, SOURCE, msg['message_id'])
                     except:
-                        print('Error forwarding message to ', chatId)
+                        print('Error forwarding message to ', chat.telegram_id)
     except KeyError:
         print('Whoops! KeyError')
 
@@ -80,8 +80,9 @@ def shouldForward(chat, text):
         return True
 
     interestedTags = []
-    for topic in chat.topics:
-        interestedTags.extend(topic.tags)
+    topics = Chat[chat.id].topics
+    for topic in topics:
+        interestedTags.extend(topic.tags[:])
     
     for tag in interestedTags:
         if text.find('#' + tag.name) >= 0:
