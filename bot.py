@@ -19,6 +19,7 @@ class Chat(db.Entity):
     id = orm.PrimaryKey(int, auto=True)
     telegram_id = orm.Required(str, unique=True)
     main = orm.Required(int)
+    active = orm.Required(int)
     name = orm.Optional(str)
     topics = orm.Set(lambda: Topic, table='topics_for_chats', column='topic_id')
 
@@ -66,6 +67,9 @@ def isAllowed(msg):
     return False
 
 def shouldForward(chat, text):
+    if chat.active == 0:
+        return False
+        
     if chat.main > 0:
         return True
 
