@@ -49,7 +49,7 @@ def handle(msg):
 
         if msg['chat']['type'] in ['group', 'supergroup'] and msg['new_chat_participant']:
             if str(msg['new_chat_participant']['id']) == BOT_ID:
-                chatId = msg['chat']['id']
+                chatId = str(msg['chat']['id'])
                 chat = Chat.get(telegram_id = chatId)
                 if chat == None:
                     chat = Chat(telegram_id = chatId, name = msg['chat']['title'], topics = availableTopics)
