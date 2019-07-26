@@ -82,7 +82,7 @@ def shouldForward(chat, text):
     interestedTags = []
     topics = Chat[chat.id].topics
     for topic in topics:
-        interestedTags.extend(topic.tags[:])
+        interestedTags.extend(list(topic.tags))
     
     for tag in interestedTags:
         if text.find('#' + tag.name) >= 0:
