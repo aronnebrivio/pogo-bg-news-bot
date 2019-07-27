@@ -52,6 +52,7 @@ def handle(msg):
                 chatId = str(msg['chat']['id'])
                 chat = Chat.get(telegram_id = chatId)
                 if chat == None:
+                    time.sleep(5)
                     chat = Chat(telegram_id = chatId, name = msg['chat']['title'], main = 0, active = 1, topics = availableTopics)
         elif msg['chat']['type'] == 'channel' and isAllowed(msg) and txt != '':
             chats = Chat.select()[:]
