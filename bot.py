@@ -36,7 +36,6 @@ class Tag(db.Entity):
     topics = orm.Set(lambda: Topic, table='tags_for_topics', column='topic_id')
 
 # Functions
-@orm.db_session
 def handle(msg):
     print('Message: ' + str(msg))
     txt = ''
@@ -50,18 +49,20 @@ def handle(msg):
         if msg['chat']['type'] in ['group', 'supergroup'] and msg['new_chat_participant']:
             if str(msg['new_chat_participant']['id']) == BOT_ID:
                 chatId = str(msg['chat']['id'])
-                chat = Chat.get(telegram_id = chatId)
-                if chat == None:
-                    time.sleep(5)
-                    chat = Chat(telegram_id = chatId, name = msg['chat']['title'], main = 0, active = 1, topics = availableTopics)
+                with orm.db_session:
+                    chat = Chat.get(telegram_id = chatId)
+                    if chat == None:
+                        time.sleep(5)
+                        chat = Chat(telegram_id = chatId, name = msg['chat']['title'], main = 0, active = 1, topics = availableTopics)
         elif msg['chat']['type'] == 'channel' and isAllowed(msg) and txt != '':
-            chats = Chat.select()[:]
-            for chat in chats:
-                if shouldForward(chat, txt):
-                    try:
-                        bot.forwardMessage(chat.telegram_id, SOURCE, msg['message_id'])
-                    except:
-                        print('Error forwarding message to ', chat.telegram_id)
+            with orm.db_session:
+                chats = Chat.select()[:]
+                for chat in chats:
+                    if shouldForward(chat, txt):
+                        try:
+                            bot.forwardMessage(chat.telegram_id, SOURCE, msg['message_id'])
+                        except:
+                            print('Error forwarding message to ', chat.telegram_id)
     except KeyError:
         print('Whoops! KeyError')
 
@@ -73,6 +74,7 @@ def isAllowed(msg):
         print('Whoops! KeyError')
     return False
 
+@orm.db_session
 def shouldForward(chat, text):
     if chat.active == 0:
         return False
