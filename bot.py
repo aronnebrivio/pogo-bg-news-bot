@@ -37,7 +37,6 @@ class Tag(db.Entity):
 
 # Functions
 def handle(msg):
-    print('Message: ' + str(msg))
     txt = ''
 
     try:
@@ -47,14 +46,15 @@ def handle(msg):
             txt = txt + msg['caption']
 
         if msg['chat']['type'] in ['group', 'supergroup'] and msg['new_chat_participant']:
+            print('Message: ' + str(msg))
             if str(msg['new_chat_participant']['id']) == BOT_ID:
                 chatId = str(msg['chat']['id'])
                 with orm.db_session:
                     chat = Chat.get(telegram_id = chatId)
                     if chat == None:
-                        time.sleep(5)
                         chat = Chat(telegram_id = chatId, name = msg['chat']['title'], main = 0, active = 1, topics = availableTopics)
         elif msg['chat']['type'] == 'channel' and isAllowed(msg) and txt != '':
+            print('Message: ' + str(msg))
             with orm.db_session:
                 chats = Chat.select()[:]
                 for chat in chats:
