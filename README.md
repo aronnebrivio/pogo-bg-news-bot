@@ -1,4 +1,6 @@
 # Pokémon GO Bergamo News Bot
+![Heroku](https://github.com/DenisOH/pyheroku-badge/raw/master/img/deployed.svg?sanitize=true)    
+    
 This bot forwards message from [@pogobgchannel](https://t.me/pogobgchannel) to other community chats.
 
 ## Install
